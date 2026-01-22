@@ -2,8 +2,18 @@ import requests
 import json
 import sys
 
-API_KEY = 'PLACEHOLDER_KEY'
+API_KEY = '86d7c6e38b52e29b6a0330f60874e516767fb2eab0f84b06af6a38e0ce6b907d435055ce1d7bee9f'
 URL = 'https://api.abuseipdb.com/api/v2/check'
+
+def get_ip_location(ip_address):
+    # This API is free for non-commercial use
+    response = requests.get(f"http://ip-api.com/json/{ip_address}")
+    data = response.json()
+    
+    if data['status'] == 'success':
+        return f"{data['country']} ({data['city']}) - ISP: {data['isp']}"
+    else:
+        return "Location Lookup Failed"
 
 def check_ip(ip_address):
     print(f"Checking IP address: {ip_address}...")
@@ -30,6 +40,8 @@ def check_ip(ip_address):
             isp = data['data']['isp']
             domain = data['data']['domain']
 
+            location_info = get_ip_location(ip_address)
+
             print("-" * 40)
             print(f"Abuse Confidence Score: {abuse_confidence_score}")
             print(f"Total Reports: {total_reports}")
@@ -37,6 +49,7 @@ def check_ip(ip_address):
             print(f"Usage Type: {usage_type}")
             print(f"ISP: {isp}")
             print(f"Domain: {domain}")
+            print(f"Location Info: {location_info}")
 
             if abuse_confidence_score > 0:
                 print("\n[!] ALERT: This IP has been reported for malicious activity!")
