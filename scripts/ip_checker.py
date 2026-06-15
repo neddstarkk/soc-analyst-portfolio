@@ -2,7 +2,7 @@ import requests
 import json
 import sys
 
-API_KEY = '86d7c6e38b52e29b6a0330f60874e516767fb2eab0f84b06af6a38e0ce6b907d435055ce1d7bee9f'
+API_KEY = "YOUR_API_KEY_HERE"
 URL = 'https://api.abuseipdb.com/api/v2/check'
 
 def get_ip_location(ip_address):
