@@ -1,0 +1,26 @@
+title: Volt Typhoon - CertUtil Ingress Tool Transfer
+id: b2e4d903-4e5f-5c3b-ad2e-1f6a7b8c9d0e
+status: experimental
+description: Detects certutil.exe being abused to download remote payloads to disk, a technique used by Volt Typhoon for ingress tool transfer. CertUtil is a trusted Windows binary with no legitimate reason to fetch remote executables.
+author: Nedheesh Hasija
+date: 2026-06-15
+references:
+    - https://attack.mitre.org/techniques/T1105/
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-144a
+tags:
+    - attack.command_and_control
+    - attack.t1105
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith: '\certutil.exe'
+        CommandLine|contains|all:
+            - '-urlcache'
+            - '-split'
+    condition: selection
+falsepositives:
+    - Legitimate certificate management tasks (extremely rare with -urlcache and -split together)
+    - SCCM or software deployment tools — exclude if ParentImage is ccmexec.exe
+level: high

@@ -55,3 +55,15 @@ The full path of where the malware tries to save itself is ```C:\\Users\<usernam
 
 There is an ```IF``` condition in the code where the adversaries were checking whether the downloaded file has a file size greater than or equal to 29936 bytes before executing. The reasoning is probably to check whether the file is actually downloaded
 
+# 4. Key Takeaways
+
+- The file size check (`>= 29936 bytes`) before execution is an anti-sandbox technique — lightweight sandbox environments that return empty HTTP responses will not trigger execution, making dynamic analysis unreliable for this sample.
+- The use of multiple fallback URLs across different compromised WordPress sites means blocking one domain is insufficient — all four IOCs should be blocked at the proxy/firewall level simultaneously.
+- Detection should target the behavioural pattern rather than the obfuscated strings: `Net.WebClient` instantiation followed by `DownloadFile` and immediate `Process.Start` in the same PowerShell session is a high-confidence indicator regardless of obfuscation variant.
+
+**IOCs (Defanged):**
+- `hxxp[://]ahc[.]mrbdev[.]com/wp-admin/qp0/`
+- `hxxp[://]e-twow[.]be/verde/in6k/`
+- `hxxps[://]magnificentpakistan[.]com/wp-includes/ha5j0b1/`
+- `hxxp[://]siwakuposo[.]com/`
+- Drop path: `C:\Users\<username>\937.exe`

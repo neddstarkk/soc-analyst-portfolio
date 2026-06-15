@@ -1,8 +1,14 @@
-# 1. Executive Summary
+# Threat Intelligence Brief: Volt Typhoon LOLBin Campaign
+**Date:** 2026-01-06
+**Analyst:** Nedheesh Hasija
+**Source:** CISA Advisory AA23-144A
+
+
+## 1. Executive Summary
 
 We are operating upon 4 command line artifacts observed in Volt Typhoon campaigns. The objective is to identify the information needed to create an alert. 
 
-## The Artifacts 
+### The Artifacts 
 
 Command A: ```netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=9999 connectaddress=10.1.2.3 connectport=8443 protocol=tcp```
 
@@ -12,7 +18,7 @@ Command C: ```ntdsutil "ac i ntds" "ifm" "create full C:\Windows\Temp\Pro" q q``
 
 Command D: ```wmic process call create "cmd.exe /c start powershell.exe -windowstyle hidden -c..."```
 
-# 2. Tool Analysis 
+## 2. Tool Analysis 
 
 Firstly we need to identify the binary being used on each command. Second, what is the intent behind the command, what is the attacker trying to accomplish. 
 
@@ -76,10 +82,20 @@ This generates two critical artifacts: the ntds.dit database containing every us
 
 This is a method of evasion as such a complex method of executing a script would essentially become background noise for an analyst. The parent-child process tree gets broken when using wmic to spawn a new process. 
 
-# 3. Alert
+## 3. Detection & Alert Logic
 
-**Title**: CertUtil Download Verification
+Four Sigma rules have been authored based on the above analysis, each targeting one LOLBin technique observed in this campaign. Rules are stored in `/detection-engineering/`.
 
-**Logic**: Process Name = certutil.exe AND Command Line contains (urlcache AND split) 
+| Rule | Technique | MITRE ID | Severity |
+|---|---|---|---|
+| [Netsh Port Proxy](../detection-engineering/2026-06-15-Sigma-VoltTyphoon-Netsh-PortProxy.yml) | C2 Tunneling via SOHO Router | T1090.001 | High |
+| [CertUtil Download](../detection-engineering/2026-06-15-Sigma-VoltTyphoon-CertUtil-Download.yml) | Ingress Tool Transfer | T1105 | High |
+| [Ntdsutil IFM Dump](../detection-engineering/2026-06-15-Sigma-VoltTyphoon-Ntdsutil-Dump.yml) | OS Credential Dumping | T1003.003 | Critical |
+| [WMIC Silent Spawn](../detection-engineering/2026-06-15-Sigma-VoltTyphoon-WMIC-Spawn.yml) | Process Injection via WMI | T1047 | High |
 
-**False Positive Check**: Exclude if Parent Process is a known software updater (e.g., ccmexec.exe for SCCM).
+# 4. Key Takeaways
+
+- Volt Typhoon exclusively uses LOLBins — binaries already trusted by Windows — meaning signature-based AV will not flag them. Detection depends entirely on behavioural rules targeting command-line arguments.
+- The netsh portproxy technique is particularly dangerous because the traffic it generates blends into normal internal network communication. Network baseline monitoring is essential to catch it.
+- The ntdsutil dump is a single command that silently extracts every domain credential. If this fires, treat it as a critical incident immediately — the attacker is preparing to go offline with the entire AD database.
+- All four techniques chain together into a full attack progression: establish C2 tunnel → download tooling → dump credentials → execute payload silently. Detecting any one of them should trigger a hunt for the others.
