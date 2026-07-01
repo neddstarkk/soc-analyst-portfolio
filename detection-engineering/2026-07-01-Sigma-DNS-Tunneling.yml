@@ -1,0 +1,29 @@
+title: Possible DNS Tunneling Detected
+id: 4153a907-2451-4e4f-a578-c52bb6881432
+status: experimental
+description: Detects suspicious DNS queries showing indicators of DNS Tunneling
+references: 
+    - https://github.com/krmaxwell/dns-exfiltration
+author: Nedheesh Hasija
+tags:
+    - attack.t1071.004
+    - attack.command-and-control
+    - attack.exfiltration
+logsource:
+    category: dns
+detection:
+    selection_long_query:
+        # Unusually long query strings, common in encoded data (Base64)
+        query_length|gt: 150
+    selection_record_type:
+        # TXT records are heavily abused for command-and-control payloads
+        record_type: 'TXT'
+    selection_high_volume:
+        # High volume of requests to a single domain (can be tuned per environment)
+        # (Using aggregation - syntax varies slightly based on the SIEM's backend)
+        query|count by client_addr|gt: 500
+    condition: (selection_long_query and selection_record_type) or (selection_record_type and selection_high_volume) or (selection_long_query and selection_high_volume)
+falsepositives:
+    - Legitimate software that uses DNS for transferring data (e.g., certain CDNs or DNS-based load balancing).
+    - Legitimate txt record queries for email verification (SPF, DKIM, DMARC).
+level: high
